@@ -98,6 +98,6 @@ You are free to use, modify, fork, learn from, and share this project.
 ## ❤️ Credits & Thanks
 
 Built with passion in Kurunegala, Sri Lanka  
-© 2026 Kawya
+© 2026 Kavindi
 
 Enjoy safer passwords!
