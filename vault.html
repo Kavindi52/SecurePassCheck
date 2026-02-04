@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Encryption Vault - SecurePassCheck</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #111118;
+            --surface-elevated: #16161f;
+            --accent: #7c3aed;
+            --accent-light: #a78bfa;
+            --teal: #2dd4bf;
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --border: #1e293b;
+            --danger: #f87171;
+            --warning: #fbbf24;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 1.25rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.35);
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 20px 40px -10px rgba(124, 58, 237, 0.18);
+        }
+
+        .input-field,
+        textarea.input-field {
+            background: var(--surface-elevated);
+            border: 1px solid var(--border);
+            border-radius: 0.875rem;
+            padding: 1.125rem 1.25rem;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1.05rem;
+            color: var(--text-primary);
+            width: 100%;
+            transition: all 0.2s ease;
+            resize: vertical;
+        }
+
+        .input-field:focus,
+        textarea.input-field:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+            font-weight: 500;
+            padding: 0.9rem 1.8rem;
+            border-radius: 0.875rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-light);
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: transparent;
+            border: 1px solid var(--danger);
+            color: var(--danger);
+            font-weight: 500;
+            padding: 0.9rem 1.8rem;
+            border-radius: 0.875rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-danger:hover {
+            background: rgba(248, 113, 113, 0.1);
+        }
+
+        .tab-button {
+            padding: 0.9rem 1.8rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .tab-button.active {
+            color: var(--accent-light);
+            border-bottom-color: var(--accent);
+        }
+
+        .tab-button:hover {
+            color: var(--text-primary);
+        }
+
+        .result-box {
+            background: var(--surface-elevated);
+            border: 1px solid var(--border);
+            border-radius: 0.875rem;
+            padding: 1.5rem;
+            min-height: 140px;
+            position: relative;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(124, 58, 237, 0.15);
+            color: var(--accent);
+            border: 1px solid var(--accent);
+            border-radius: 0.5rem;
+            padding: 0.4rem 0.9rem;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .copy-btn:hover {
+            background: var(--accent);
+            color: white;
+        }
+
+        .history-item {
+            background: var(--surface-elevated);
+            border: 1px solid var(--border);
+            border-radius: 0.875rem;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .history-item:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .method-chip {
+            padding: 0.6rem 1.3rem;
+            background: rgba(124, 58, 237, 0.08);
+            border: 1px solid var(--border);
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        .method-chip.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .method-chip:hover:not(.active) {
+            background: rgba(124, 58, 237, 0.15);
+        }
+
+        .section-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--accent-light);
+            margin-bottom: 1.25rem;
+        }
+
+        .notification {
+            position: fixed;
+            top: 5rem;
+            right: 1.5rem;
+            z-index: 1000;
+            padding: 1rem 1.5rem;
+            border-radius: 0.875rem;
+            font-weight: 500;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            transform: translateX(120%);
+            transition: transform 0.4s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background: rgba(45, 212, 191, 0.9);
+            color: #000;
+        }
+
+        .notification.error {
+            background: rgba(248, 113, 113, 0.9);
+            color: #000;
+        }
+    </style>
+</head>
+
+<body class="antialiased">
+
+    <!-- Navigation -->
+    <nav class="border-b border-gray-800/60 bg-black/40 backdrop-blur-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-3">
+                    <span
+                        class="text-3xl font-bold tracking-tight bg-gradient-to-r from-violet-400 to-teal-400 bg-clip-text text-transparent">
+                        SecurePassCheck
+                    </span>
+                </div>
+
+                <div class="hidden md:flex items-center gap-10 text-sm font-medium">
+                    <a href="index.html" class="text-gray-400 hover:text-white transition">Home</a>
+                    <a href="strength.html" class="text-gray-400 hover:text-white transition">Strength</a>
+                    <a href="vault.html" class="text-violet-400 font-semibold">Vault</a>
+                    <a href="dashboard.html" class="text-gray-400 hover:text-white transition">Dashboard</a>
+                </div>
+
+                <div class="md:hidden">
+                    <button class="text-gray-400 hover:text-white">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8 py-10 lg:py-14">
+
+        <header class="text-center mb-12 lg:mb-16">
+            <h1 class="text-4xl lg:text-5xl font-bold tracking-tight mb-4">Encryption Vault</h1>
+            <p class="text-lg text-gray-400">Secure local storage • AES-256 • Zero-knowledge</p>
+        </header>
+
+        <!-- Tabs -->
+        <div class="flex justify-center gap-2 mb-10 border-b border-gray-800 pb-1">
+            <button class="tab-button active" onclick="switchTab('encrypt')">Encrypt</button>
+            <button class="tab-button" onclick="switchTab('decrypt')">Decrypt</button>
+            <button class="tab-button" onclick="switchTab('history')">History</button>
+        </div>
+
+        <!-- Encrypt Tab -->
+        <div id="encrypt-content">
+            <div class="grid lg:grid-cols-2 gap-8 lg:gap-12">
+
+                <!-- Encrypt Form -->
+                <div class="card p-8 space-y-8">
+                    <h3 class="section-title">Encrypt Password</h3>
+
+                    <div class="flex flex-wrap gap-3 mb-6">
+                        <div class="method-chip active" onclick="selectMethod('aes')" id="aes-method">AES-256</div>
+                        <div class="method-chip" onclick="selectMethod('base64')" id="base64-method">Base64</div>
+                        <div class="method-chip" onclick="selectMethod('custom')" id="custom-method">XOR</div>
+                    </div>
+
+                    <div class="space-y-6">
+                        <div>
+                            <label class="block text-sm font-medium mb-3 text-violet-300">Password to encrypt</label>
+                            <div class="relative">
+                                <input type="password" id="encrypt-password" class="input-field"
+                                    placeholder="Enter password..." autocomplete="off">
+                                <button
+                                    class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-violet-300"
+                                    onclick="togglePasswordVisibility('encrypt-password')">
+                                    <svg id="encrypt-eye" class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                        <path
+                                            d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium mb-3 text-violet-300">Encryption Key
+                                (optional)</label>
+                            <input type="text" id="encryption-key" class="input-field"
+                                placeholder="Auto-generated if empty">
+                        </div>
+
+                        <button id="encrypt-button" class="btn-primary w-full"
+                            onclick="encryptPassword()">Encrypt</button>
+                    </div>
+                </div>
+
+                <!-- Encrypt Result -->
+                <div class="card p-8">
+                    <h3 class="section-title">Encryption Result</h3>
+                    <div id="encryption-result" class="result-box hidden">
+                        <button class="copy-btn" onclick="copyToClipboard('encrypted-text')">Copy</button>
+                        <div class="text-sm text-gray-400 mb-2">Encrypted data:</div>
+                        <div id="encrypted-text" class="text-teal-300 break-all"></div>
+
+                        <div class="mt-6 pt-4 border-t border-gray-800">
+                            <div class="text-sm text-gray-400 mb-1">Key:</div>
+                            <div id="encryption-key-display" class="text-violet-300 break-all"></div>
+                        </div>
+
+                        <div class="mt-4 text-xs text-gray-500">
+                            Saved: <span id="encryption-timestamp"></span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Decrypt Tab -->
+        <div id="decrypt-content" class="hidden">
+            <div class="grid lg:grid-cols-2 gap-8 lg:gap-12">
+
+                <div class="card p-8 space-y-8">
+                    <h3 class="section-title">Decrypt Data</h3>
+
+                    <div class="space-y-6">
+                        <div>
+                            <label class="block text-sm font-medium mb-3 text-violet-300">Encrypted string</label>
+                            <textarea id="decrypt-hash" class="input-field" rows="4"
+                                placeholder="Paste encrypted data here..."></textarea>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium mb-3 text-violet-300">Decryption Key</label>
+                            <div class="relative">
+                                <input type="password" id="decryption-key" class="input-field"
+                                    placeholder="Enter decryption key">
+                                <button
+                                    class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-violet-300"
+                                    onclick="togglePasswordVisibility('decryption-key')">
+                                    <svg id="decrypt-eye" class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                        <path
+                                            d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <button id="decrypt-button" class="btn-danger w-full"
+                            onclick="decryptPassword()">Decrypt</button>
+                    </div>
+                </div>
+
+                <div class="space-y-8">
+                    <div class="card p-8">
+                        <h3 class="section-title">Decryption Result</h3>
+                        <div id="decryption-result" class="result-box hidden">
+                            <button class="copy-btn" onclick="copyToClipboard('decrypted-text')">Copy</button>
+                            <div class="text-sm text-gray-400 mb-2">Original password:</div>
+                            <div id="decrypted-text" class="text-teal-300 font-medium break-all"></div>
+
+                            <div class="mt-6 pt-4 border-t border-gray-800 text-xs text-gray-500">
+                                Decrypted: <span id="decryption-timestamp"></span>
+                            </div>
+                        </div>
+
+                        <div id="decryption-error" class="result-box hidden" style="border-color: var(--danger)">
+                            <div class="text-sm text-red-400 mb-2">Error</div>
+                            <div id="error-message" class="text-red-300"></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- History Tab -->
+        <div id="history-content" class="hidden">
+            <div class="card p-8">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+                    <h3 class="section-title">Password History</h3>
+                    <button class="btn-danger text-sm px-6 py-2" onclick="clearHistory()">Clear All</button>
+                </div>
+
+                <input type="text" id="history-search" class="input-field mb-6" placeholder="Search history..."
+                    oninput="filterHistory()">
+
+                <div id="password-history" class="space-y-4 max-h-[600px] overflow-y-auto pr-2"></div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // ─── Tab Switching ───
+        function switchTab(tab) {
+            document.querySelectorAll('#encrypt-content, #decrypt-content, #history-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
+            document.getElementById(tab + '-content').classList.remove('hidden');
+            document.querySelector(`[onclick="switchTab('${tab}')"]`).classList.add('active');
+
+            if (tab === 'history') loadPasswordHistory();
+        }
+
+        // ─── Method Selection ───
+        let currentMethod = 'aes';
+        function selectMethod(method) {
+            document.querySelectorAll('.method-chip').forEach(el => el.classList.remove('active'));
+            document.getElementById(method + '-method').classList.add('active');
+            currentMethod = method;
+        }
+
+        // ─── Toggle Visibility ───
+        function togglePasswordVisibility(id) {
+            const input = document.getElementById(id);
+            const iconId = id.includes('encrypt') ? 'encrypt-eye' : 'decrypt-eye';
+            const icon = document.getElementById(iconId);
+
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.innerHTML = '<path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2z"/>';
+            } else {
+                input.type = 'password';
+                icon.innerHTML = '<path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>';
+            }
+        }
+
+        // ─── Notification ───
+        function showNotification(msg, type = 'success') {
+            const n = document.createElement('div');
+            n.className = `notification ${type} show`;
+            n.textContent = msg;
+            document.body.appendChild(n);
+            setTimeout(() => {
+                n.classList.remove('show');
+                setTimeout(() => n.remove(), 500);
+            }, 2800);
+        }
+
+        // ─── Copy to Clipboard ───
+        function copyToClipboard(id) {
+            const el = document.getElementById(id);
+            navigator.clipboard.writeText(el.textContent).then(() => {
+                showNotification('Copied to clipboard', 'success');
+            });
+        }
+
+        // ─── Encryption ───
+        function encryptPassword() {
+            const pass = document.getElementById('encrypt-password').value.trim();
+            let key = document.getElementById('encryption-key').value.trim() || CryptoJS.lib.WordArray.random(32).toString();
+
+            if (!pass) return showNotification('Please enter a password', 'error');
+
+            const btn = document.getElementById('encrypt-button');
+            btn.disabled = true;
+            btn.textContent = 'Encrypting...';
+
+            setTimeout(() => {
+                try {
+                    let encrypted = '';
+                    if (currentMethod === 'aes') {
+                        encrypted = 'aes:' + CryptoJS.AES.encrypt(pass, key).toString();
+                    } else if (currentMethod === 'base64') {
+                        encrypted = 'base64:' + CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(pass));
+                    } else {
+                        encrypted = 'custom:' + btoa(xorEncrypt(pass, key));
+                    }
+
+                    document.getElementById('encrypted-text').textContent = encrypted;
+                    document.getElementById('encryption-key-display').textContent = key;
+                    document.getElementById('encryption-timestamp').textContent = new Date().toLocaleString();
+                    document.getElementById('encryption-result').classList.remove('hidden');
+
+                    saveToHistory(pass, encrypted, key, currentMethod);
+                    showNotification('Encryption successful', 'success');
+                } catch (e) {
+                    showNotification('Encryption failed: ' + e.message, 'error');
+                }
+
+                btn.disabled = false;
+                btn.textContent = 'Encrypt';
+            }, 700);
+        }
+
+        // ─── Decryption ───
+        function decryptPassword() {
+            const hash = document.getElementById('decrypt-hash').value.trim();
+            const key = document.getElementById('decryption-key').value.trim();
+
+            if (!hash || !key) return showNotification('Both fields are required', 'error');
+
+            const btn = document.getElementById('decrypt-button');
+            btn.disabled = true;
+            btn.textContent = 'Decrypting...';
+
+            setTimeout(() => {
+                try {
+                    const method = hash.startsWith('aes:') ? 'aes' :
+                        hash.startsWith('base64:') ? 'base64' :
+                            hash.startsWith('custom:') ? 'custom' : null;
+
+                    if (!method) throw new Error('Unknown encryption format');
+
+                    let clean = hash.split(':').slice(1).join(':');
+                    let decrypted = '';
+
+                    if (method === 'aes') {
+                        const bytes = CryptoJS.AES.decrypt(clean, key);
+                        decrypted = bytes.toString(CryptoJS.enc.Utf8);
+                    } else if (method === 'base64') {
+                        decrypted = CryptoJS.enc.Base64.parse(clean).toString(CryptoJS.enc.Utf8);
+                    } else {
+                        decrypted = xorDecrypt(atob(clean), key);
+                    }
+
+                    if (!decrypted) throw new Error('Incorrect key or corrupted data');
+
+                    document.getElementById('decrypted-text').textContent = decrypted;
+                    document.getElementById('decryption-timestamp').textContent = new Date().toLocaleString();
+                    document.getElementById('decryption-result').classList.remove('hidden');
+                    document.getElementById('decryption-error').classList.add('hidden');
+
+                    showNotification('Decryption successful', 'success');
+                } catch (e) {
+                    document.getElementById('error-message').textContent = e.message;
+                    document.getElementById('decryption-error').classList.remove('hidden');
+                    document.getElementById('decryption-result').classList.add('hidden');
+                    showNotification('Decryption failed', 'error');
+                }
+
+                btn.disabled = false;
+                btn.textContent = 'Decrypt';
+            }, 700);
+        }
+
+        // XOR helpers
+        function xorEncrypt(text, key) {
+            let out = '';
+            for (let i = 0; i < text.length; i++) {
+                out += String.fromCharCode(text.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+            }
+            return out;
+        }
+
+        function xorDecrypt(text, key) {
+            return xorEncrypt(text, key);
+        }
+
+        // ─── History ───
+        function saveToHistory(original, encrypted, key, method) {
+            const entry = {
+                id: Date.now(),
+                originalLength: original.length,
+                encrypted,
+                key,
+                method,
+                timestamp: new Date().toISOString()
+            };
+            let hist = JSON.parse(localStorage.getItem('passwordHistory') || '[]');
+            hist.unshift(entry);
+            if (hist.length > 50) hist = hist.slice(0, 50);
+            localStorage.setItem('passwordHistory', JSON.stringify(hist));
+        }
+
+        function loadPasswordHistory() {
+            const hist = JSON.parse(localStorage.getItem('passwordHistory') || '[]');
+            const container = document.getElementById('password-history');
+
+            if (hist.length === 0) {
+                container.innerHTML = `<div class="text-center py-16 text-gray-500">No entries yet.</div>`;
+                return;
+            }
+
+            container.innerHTML = hist.map(item => `
+                <div class="history-item">
+                    <div class="flex justify-between items-start mb-3 flex-wrap gap-3">
+                        <div class="text-sm text-gray-400">${new Date(item.timestamp).toLocaleString()}</div>
+                        <div class="flex gap-3">
+                            <button class="text-xs px-4 py-1.5 bg-violet-900/40 text-violet-300 rounded-lg hover:bg-violet-800/60" onclick="fillDecrypt('${item.encrypted}', '${item.key}')">Decrypt</button>
+                            <button class="text-xs px-4 py-1.5 bg-red-900/40 text-red-300 rounded-lg hover:bg-red-800/60" onclick="deleteEntry(${item.id})">Delete</button>
+                        </div>
+                    </div>
+                    <div class="text-xs text-gray-500 mb-2">Method: ${item.method.toUpperCase()} • ${item.originalLength} chars</div>
+                    <div class="text-sm font-mono text-teal-300 break-all">${item.encrypted.substring(0, 100)}${item.encrypted.length > 100 ? '...' : ''}</div>
+                </div>
+            `).join('');
+        }
+
+        function deleteEntry(id) {
+            if (!confirm('Delete this entry?')) return;
+            let hist = JSON.parse(localStorage.getItem('passwordHistory') || '[]');
+            hist = hist.filter(h => h.id !== id);
+            localStorage.setItem('passwordHistory', JSON.stringify(hist));
+            loadPasswordHistory();
+        }
+
+        function clearHistory() {
+            if (!confirm('Clear ALL history? This cannot be undone.')) return;
+            localStorage.removeItem('passwordHistory');
+            loadPasswordHistory();
+            showNotification('History cleared', 'success');
+        }
+
+        function filterHistory() {
+            const term = document.getElementById('history-search').value.toLowerCase();
+            const hist = JSON.parse(localStorage.getItem('passwordHistory') || '[]');
+            const filtered = hist.filter(h =>
+                h.method.toLowerCase().includes(term) ||
+                new Date(h.timestamp).toLocaleString().toLowerCase().includes(term) ||
+                h.encrypted.toLowerCase().includes(term)
+            );
+
+            document.getElementById('password-history').innerHTML = filtered.length ?
+                filtered.map(/* same template as above */).join('') :
+                `<div class="text-center py-16 text-gray-500">No matching entries</div>`;
+        }
+
+        function fillDecrypt(encrypted, key) {
+            switchTab('decrypt');
+            document.getElementById('decrypt-hash').value = encrypted;
+            document.getElementById('decryption-key').value = key;
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            const pw = sessionStorage.getItem('passwordToEncrypt');
+            if (pw) {
+                document.getElementById('encrypt-password').value = pw;
+                sessionStorage.removeItem('passwordToEncrypt');
+                showNotification('Password loaded from analyzer', 'success');
+            }
+            switchTab('encrypt');
+        });
+    </script>
+</body>
+
+</html>
